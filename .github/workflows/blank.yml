@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ultra Pro Max Galaxy Edition — Final Boss</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
+body{
+  background:linear-gradient(135deg,#020617,#0f172a,#111827);
+  color:white;
+  min-height:100vh;
+  padding:20px;
+}
+.app{
+  max-width:1200px;
+  margin:auto;
+}
+.title{
+  text-align:center;
+  font-size:34px;
+  margin-bottom:20px;
+  font-weight:700;
+}
+.panel{
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(18px);
+  border-radius:25px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 0 25px rgba(0,255,255,.15);
+}
+.tabs{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+button{
+  border:none;
+  padding:12px 18px;
+  border-radius:15px;
+  cursor:pointer;
+  background:rgba(255,255,255,.1);
+  color:white;
+  transition:.2s;
+}
+button:hover{
+  transform:scale(1.05);
+  box-shadow:0 0 15px cyan;
+}
+input,textarea,select{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:15px;
+  background:rgba(255,255,255,.1);
+  color:white;
+  margin:10px 0;
+  font-size:18px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:10px;
+}
+.calc-btn{
+  height:60px;
+  font-size:22px;
+}
+.hidden{display:none}
+#history{
+  max-height:180px;
+  overflow:auto;
+}
+canvas{
+  background:white;
+  border-radius:20px;
+  padding:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="title">👑🌌⚡😎 Ultra Pro Max Galaxy Edition — Final Boss</div>
+
+  <div class="panel">
+    <div class="tabs">
+      <button onclick="showTab('calc')">🧮 Calculator</button>
+      <button onclick="showTab('graph')">📈 Graph Lab</button>
+      <button onclick="showTab('matrix')">🧮 Matrix</button>
+      <button onclick="showTab('physics')">⚛ Physics</button>
+      <button onclick="showTab('stats')">📊 Stats</button>
+      <button onclick="showTab('voice')">🎤 Voice AI</button>
+      <button onclick="showTab('historyTab')">📜 History</button>
+    </div>
+
+    <!-- Calculator -->
+    <div id="calc">
+      <input id="display" readonly placeholder="0">
+      <div class="grid" id="buttons"></div>
+    </div>
+
+    <!-- Graph -->
+    <div id="graph" class="hidden">
+      <input id="fx" value="Math.sin(x)" placeholder="Example: x*x or Math.sin(x)">
+      <button onclick="plotGraph()">Plot</button>
+      <canvas id="chart" height="120"></canvas>
+    </div>
+
+    <!-- Matrix -->
+    <div id="matrix" class="hidden">
+      <textarea id="matrixInput" rows="5">1 2 3
+4 5 6
+7 8 9</textarea>
+      <button onclick="determinant()">Determinant (3x3)</button>
+    </div>
+
+    <!-- Physics -->
+    <div id="physics" class="hidden">
+      <button onclick="setAns(0.5*2*10*10)">Kinetic Energy</button>
+      <button onclick="setAns(5*9.8)">Weight Force</button>
+      <button onclick="setAns(12/3)">Ohm's Law</button>
+    </div>
+
+    <!-- Stats -->
+    <div id="stats" class="hidden">
+      <input id="statsInput" placeholder="2,4,6,8,10">
+      <button onclick="calcStats()">Calculate</button>
+    </div>
+
+    <!-- Voice -->
+    <div id="voice" class="hidden">
+      <button onclick="startVoice()">🎤 Start Listening</button>
+      <p id="voiceStatus">Idle</p>
+    </div>
+
+    <!-- History -->
+    <div id="historyTab" class="hidden">
+      <div id="history"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const display = document.getElementById("display");
+const historyDiv = document.getElementById("history");
+let chart;
+
+function add(v){ display.value += v; }
+function clearDisplay(){ display.value = ""; }
+
+function calculate(){
+  try{
+    const expr = display.value.replace(/÷/g,"/").replace(/×/g,"*").replace(/\^/g,"**");
+    const ans = Function("return (" + expr + ")")();
+    historyDiv.innerHTML = `<div>${display.value} = ${ans}</div>` + historyDiv.innerHTML;
+    display.value = ans;
+  }catch{
+    display.value = "Error";
+  }
+}
+
+function setAns(v){ display.value = v; }
+
+const keys = ["7","8","9","÷","C","4","5","6","×","(","1","2","3","- ",")","0",".","+","^","="];
+const box = document.getElementById("buttons");
+
+keys.forEach(k=>{
+  const b = document.createElement("button");
+  b.className="calc-btn";
+  b.textContent=k;
+  b.onclick=()=>{
+    if(k==="C") clearDisplay();
+    else if(k==="=") calculate();
+    else add(k.trim());
+  };
+  box.appendChild(b);
+});
+
+function showTab(id){
+  ["calc","graph","matrix","physics","stats","voice","historyTab"].forEach(t=>{
+    document.getElementById(t).classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function plotGraph(){
+  const fx = document.getElementById("fx").value;
+  let xs=[], ys=[];
+  for(let x=-20;x<=20;x+=0.5){
+    xs.push(x);
+    try{ ys.push(Function("x","return "+fx)(x)); }
+    catch{ ys.push(null); }
+  }
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById("chart"),{
+    type:"line",
+    data:{labels:xs,datasets:[{data:ys,borderWidth:2}]},
+    options:{responsive:true}
+  });
+}
+
+function determinant(){
+  try{
+    const m = document.getElementById("matrixInput").value
+      .trim().split("\n").map(r=>r.trim().split(/\s+/).map(Number));
+    const d =
+      m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1]) -
+      m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) +
+      m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+    display.value = d;
+  }catch{
+    display.value = "Error";
+  }
+}
+
+function calcStats(){
+  try{
+    const arr = document.getElementById("statsInput").value.split(",").map(Number);
+    const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+    const sorted = [...arr].sort((a,b)=>a-b);
+    const median = sorted[Math.floor(sorted.length/2)];
+    display.value = `Mean=${mean}, Median=${median}`;
+  }catch{
+    display.value = "Error";
+  }
+}
+
+function startVoice(){
+  const status = document.getElementById("voiceStatus");
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ status.textContent="Not supported"; return; }
+  const rec = new SR();
+  status.textContent="Listening...";
+  rec.start();
+  rec.onresult = e=>{
+    let t = e.results[0][0].transcript;
+    status.textContent = "Heard: " + t;
+    t = t.replace(/plus/g,"+").replace(/minus/g,"-").replace(/times/g,"*");
+    display.value = t;
+  };
+}
+
+document.addEventListener("keydown",e=>{
+  if("0123456789+-*/().".includes(e.key)) add(e.key);
+  if(e.key==="Enter") calculate();
+  if(e.key==="Backspace") display.value = display.value.slice(0,-1);
+});
+
+plotGraph();
+</script>
+</body>
+</html>
